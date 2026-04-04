@@ -1,0 +1,6 @@
+.build/
+ClipboardApp.app/
+.DS_Store
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+releases/
