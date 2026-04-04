@@ -36,6 +36,11 @@ public final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(hideCopiedPreviews, forKey: Keys.hideCopiedPreviews) }
     }
 
+    /// When true, ``ClipboardHistoryStore`` writes AES-256-GCM–wrapped files; when false, plain JSON on disk.
+    @Published public var encryptClipboardDataAtRest: Bool {
+        didSet { UserDefaults.standard.set(encryptClipboardDataAtRest, forKey: Keys.encryptClipboardDataAtRest) }
+    }
+
     /// Virtual key code for the global overlay shortcut (Carbon / `NSEvent.keyCode`).
     @Published public var overlayHotKeyKeyCode: Int {
         didSet { UserDefaults.standard.set(overlayHotKeyKeyCode, forKey: Keys.overlayHotKeyKeyCode) }
@@ -56,6 +61,7 @@ public final class AppSettings: ObservableObject {
         static let launchAtLogin = "launchAtLogin"
         static let showCopyNotifications = "showCopyNotifications"
         static let hideCopiedPreviews = "hideCopiedPreviews"
+        static let encryptClipboardDataAtRest = "encryptClipboardDataAtRest"
         static let overlayHotKeyKeyCode = "overlayHotKeyKeyCode"
         static let overlayHotKeyCarbonModifiers = "overlayHotKeyCarbonModifiers"
         static let overlayHotKeyMenuCharacter = "overlayHotKeyMenuCharacter"
@@ -73,6 +79,11 @@ public final class AppSettings: ObservableObject {
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         showCopyNotifications = (defaults.object(forKey: Keys.showCopyNotifications) as? Bool) ?? true
         hideCopiedPreviews = defaults.bool(forKey: Keys.hideCopiedPreviews)
+        if let enc = defaults.object(forKey: Keys.encryptClipboardDataAtRest) as? Bool {
+            encryptClipboardDataAtRest = enc
+        } else {
+            encryptClipboardDataAtRest = false
+        }
         if let code = defaults.object(forKey: Keys.overlayHotKeyKeyCode) as? Int, (0...255).contains(code) {
             overlayHotKeyKeyCode = code
         } else {

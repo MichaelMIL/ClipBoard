@@ -47,6 +47,17 @@ public final class ClipboardHistoryStore: ObservableObject {
                 self?.trimToMax(max)
             }
             .store(in: &cancellables)
+
+        appSettings.$encryptClipboardDataAtRest
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                saveWorkItem?.cancel()
+                saveToDisk()
+                saveFavoritesToDisk()
+            }
+            .store(in: &cancellables)
     }
 
     public func start() {
@@ -232,7 +243,7 @@ public final class ClipboardHistoryStore: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
         guard let decoded = try? decoder.decode([ClipboardItem].self, from: data) else { return }
         favorites = decoded
-        if !ClipboardPersistenceCrypto.isEncryptedFileFormat(raw) {
+        if persistenceFormatMismatch(raw) {
             saveFavoritesToDisk()
         }
     }
@@ -242,7 +253,7 @@ public final class ClipboardHistoryStore: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         guard let json = try? encoder.encode(favorites) else { return }
-        guard let data = try? ClipboardPersistenceCrypto.wrapPlaintextJSON(json) else { return }
+        guard let data = encodeForPersistence(json) else { return }
         try? data.write(to: Self.favoritesPersistenceURL, options: [.atomic])
     }
 
@@ -254,7 +265,7 @@ public final class ClipboardHistoryStore: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
         guard let decoded = try? decoder.decode([ClipboardItem].self, from: data) else { return }
         items = Array(decoded.prefix(maxItems))
-        if !ClipboardPersistenceCrypto.isEncryptedFileFormat(raw) {
+        if persistenceFormatMismatch(raw) {
             scheduleSave()
         }
     }
@@ -273,7 +284,19 @@ public final class ClipboardHistoryStore: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         guard let json = try? encoder.encode(items) else { return }
-        guard let data = try? ClipboardPersistenceCrypto.wrapPlaintextJSON(json) else { return }
+        guard let data = encodeForPersistence(json) else { return }
         try? data.write(to: Self.persistenceURL, options: [.atomic])
+    }
+
+    /// True when on-disk envelope (encrypted vs plain) does not match the current setting.
+    private func persistenceFormatMismatch(_ rawFile: Data) -> Bool {
+        appSettings.encryptClipboardDataAtRest != ClipboardPersistenceCrypto.isEncryptedFileFormat(rawFile)
+    }
+
+    private func encodeForPersistence(_ json: Data) -> Data? {
+        if appSettings.encryptClipboardDataAtRest {
+            return try? ClipboardPersistenceCrypto.wrapPlaintextJSON(json)
+        }
+        return json
     }
 }

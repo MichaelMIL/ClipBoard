@@ -16,7 +16,7 @@
   <h3 align="center">Clipboard</h3>
 
   <p align="center">
-    macOS menu bar app — keep a history of what you copy and paste older clips in seconds.
+    macOS menu bar clipboard manager — history, favorites, keyboard-driven overlay, and optional on-disk encryption.
     <br />
     <a href="https://github.com/MichaelMIL/ClipBoard#readme"><strong>Explore the docs »</strong></a>
     <br />
@@ -37,6 +37,7 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
+        <li><a href="#features">Features</a></li>
         <li><a href="#privacy-and-open-source">Privacy and open source</a></li>
         <li><a href="#built-with">Built With</a></li>
       </ul>
@@ -59,17 +60,28 @@
 
 ## About The Project
 
-Clipboard runs in the **menu bar** and records a rolling **history of things you copy**. Open an **overlay** to browse recent clips, pick one, and it goes back on the system pasteboard so you can paste it anywhere—without digging through other apps.
+Clipboard runs in the **menu bar** and records a rolling **history** of text and file copies from the system pasteboard. Open a floating **overlay** (global shortcut or menu), pick an entry, and it is copied back to the pasteboard so you can **⌘V** it in any app.
+
+### Features
+
+* **History** — Configurable size (10–200 items). Older entries drop off as you copy more; data lives under **Application Support** (`history.json`, plus `favorites.json` for starred items).
+* **Favorites** — Star any row in the overlay; favorites appear on a dedicated tab and **are not removed** when history trims or when you lower the history limit (unstar to delete).
+* **Overlay** — **Search** across history or favorites (text and file paths / names). **↑↓** to move selection, **↵** to copy and close, **1–9** and **0** for the ten **visible** rows (badges in the left column). **Escape** moves from search to the list, then closes the overlay.
+* **Optional encryption** — By default, history and favorites are **plain JSON**. Enable **Encrypt history and favorites on disk** in Preferences to use **AES-256-GCM** with a key stored in your **login Keychain** (toggle anytime; files are rewritten to match).
+* **Notifications** — Optional banner when you copy, with a mode that hides preview text in the notification (overlay still shows full content).
+* **Open at login** — System login item via **SMAppService** (may need approval for unsigned local builds).
+* **Global shortcut** — Show or hide the overlay from any app (default **⌘⇧C**, fully customizable).
 
 ### Privacy and open source
 
-This project exists so you can use a clipboard manager **without your clips or personal information being collected or shared** by the app. Clipboard is built to keep history **on your Mac**—there is no analytics, telemetry, or cloud sync; nothing is uploaded to remote servers for the app to work. **History and favorites files on disk are encrypted** (AES-256-GCM) using a key stored in your login Keychain. The **full source code is public** (MIT License), so anyone can review it, build it themselves, and confirm how data is handled.
+This project exists so you can use a clipboard manager **without your clips or personal information being collected or shared** by the app. Clipboard is built to keep history **on your Mac**—there is no analytics, telemetry, or cloud sync; nothing is uploaded to remote servers for the app to work. **History and favorites are stored as plain JSON by default**; you can enable encryption (AES-256-GCM, key in your login Keychain) in **Preferences → History** for stronger protection on disk. Encrypted files are **not** portable by copying JSON alone—the Keychain entry on that Mac is required to decrypt. The **full source code is public** (MIT License), so anyone can review it, build it themselves, and confirm how data is handled.
 
 Why use it:
 
-* **Stays out of the way** — one icon next to the clock; no dock clutter.
-* **Keyboard-driven** — set a global shortcut for the overlay in Preferences.
-* **Private options** — optional copy notifications with a mode that hides preview text.
+* **Stays out of the way** — one menu bar icon; no dock clutter.
+* **Keyboard-driven** — global overlay shortcut, list navigation, and number keys for quick picks.
+* **Favorites** — keep snippets and paths outside the rolling history cap.
+* **Private options** — optional copy notifications with hidden previews; optional disk encryption via Keychain-backed AES-GCM.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -148,7 +160,7 @@ The overlay has two tabs: **History** (everything Clipboard has recorded, subjec
 
 ### Preferences
 
-* **History** — **Keep up to *N* items** (10–200, step 10). Lowering the limit drops older **history** entries only; **favorites are unchanged**. History and favorites are stored under Application Support as **encrypted** JSON (AES-256-GCM); the encryption key lives in your **login Keychain** and does not leave the device.
+* **History** — **Keep up to *N* items** (10–200, step 10). Lowering the limit drops older **history** entries only; **favorites are unchanged**. **Encrypt history and favorites on disk** (off by default) uses AES-256-GCM with a key in your **login Keychain**; when off, files are plain JSON under Application Support (existing files are rewritten when you change this).
 * **Notifications** — **Show notification when you copy**; optional **Hide copied content in notifications** (generic text only; the overlay list still shows full previews). **Open Notifications settings…** jumps to System Settings. **Fix registration (Launch Services)…** helps if the app does not appear in the notifications list (available when running the bundled **ClipboardApp.app**, not only `swift run`).
 * **Login** — **Open at login** registers the app with the system login item API (**SMAppService**). Unsigned local builds may need you to allow Clipboard under **Login Items** in System Settings; errors surface in red under this section when registration fails.
 * **Shortcuts** — **Open overlay** — record a new global key combination for showing and hiding the overlay.

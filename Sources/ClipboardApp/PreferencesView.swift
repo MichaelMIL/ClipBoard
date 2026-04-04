@@ -11,7 +11,8 @@ struct PreferencesView: View {
                 Stepper(value: $settings.maxHistoryItems, in: 10...200, step: 10) {
                     Text("Keep up to \(settings.maxHistoryItems) items")
                 }
-                Text("Older entries are removed when the limit is lowered. History is saved under Application Support as encrypted JSON (AES-256-GCM; key in Keychain).")
+                Toggle("Encrypt history and favorites on disk", isOn: $settings.encryptClipboardDataAtRest)
+                Text(historyStorageCaption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -61,6 +62,16 @@ struct PreferencesView: View {
         .onChange(of: settings.showCopyNotifications) { _, enabled in
             NotificationPermission.requestForCopyAlertsIfEnabled(enabled)
         }
+    }
+
+    private var historyStorageCaption: String {
+        var base = "Older entries are removed when the limit is lowered. History and favorites are saved under Application Support"
+        if settings.encryptClipboardDataAtRest {
+            base += " as encrypted JSON (AES-256-GCM; key in Keychain)."
+        } else {
+            base += " as readable JSON (not encrypted—anyone with access to your Mac user folder can read the files)."
+        }
+        return base
     }
 
     private func focusPreferencesWindow() {
