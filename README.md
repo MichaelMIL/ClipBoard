@@ -59,8 +59,6 @@
 
 ## About The Project
 
-[![Clipboard app logo][product-screenshot]](https://github.com/MichaelMIL/ClipBoard/releases)
-
 Clipboard runs in the **menu bar** and records a rolling **history of things you copy**. Open an **overlay** to browse recent clips, pick one, and it goes back on the system pasteboard so you can paste it anywhere—without digging through other apps.
 
 ### Privacy and open source
