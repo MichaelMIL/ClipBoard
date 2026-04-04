@@ -185,10 +185,10 @@ Contributions are welcome. Fork the repo, open a **pull request**, or file an is
 4. Push to the Branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Top contributors
+### Top contributor
 
 <a href="https://github.com/MichaelMIL/ClipBoard/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=MichaelMIL/ClipBoard" alt="Contributors" />
+  <img src="https://contrib.rocks/image?repo=MichaelMIL/ClipBoard&amp;max=1" alt="Top contributor" />
 </a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
