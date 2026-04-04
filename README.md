@@ -63,7 +63,7 @@ Clipboard runs in the **menu bar** and records a rolling **history of things you
 
 ### Privacy and open source
 
-This project exists so you can use a clipboard manager **without your clips or personal information being collected or shared** by the app. Clipboard is built to keep history **on your Mac**—there is no analytics, telemetry, or cloud sync; nothing is uploaded to remote servers for the app to work. The **full source code is public** (MIT License), so anyone can review it, build it themselves, and confirm how data is handled.
+This project exists so you can use a clipboard manager **without your clips or personal information being collected or shared** by the app. Clipboard is built to keep history **on your Mac**—there is no analytics, telemetry, or cloud sync; nothing is uploaded to remote servers for the app to work. **History and favorites files on disk are encrypted** (AES-256-GCM) using a key stored in your login Keychain. The **full source code is public** (MIT License), so anyone can review it, build it themselves, and confirm how data is handled.
 
 Why use it:
 
@@ -148,7 +148,7 @@ The overlay has two tabs: **History** (everything Clipboard has recorded, subjec
 
 ### Preferences
 
-* **History** — **Keep up to *N* items** (10–200, step 10). Lowering the limit drops older **history** entries only; **favorites are unchanged**. History is stored on disk under Application Support as JSON.
+* **History** — **Keep up to *N* items** (10–200, step 10). Lowering the limit drops older **history** entries only; **favorites are unchanged**. History and favorites are stored under Application Support as **encrypted** JSON (AES-256-GCM); the encryption key lives in your **login Keychain** and does not leave the device.
 * **Notifications** — **Show notification when you copy**; optional **Hide copied content in notifications** (generic text only; the overlay list still shows full previews). **Open Notifications settings…** jumps to System Settings. **Fix registration (Launch Services)…** helps if the app does not appear in the notifications list (available when running the bundled **ClipboardApp.app**, not only `swift run`).
 * **Login** — **Open at login** registers the app with the system login item API (**SMAppService**). Unsigned local builds may need you to allow Clipboard under **Login Items** in System Settings; errors surface in red under this section when registration fails.
 * **Shortcuts** — **Open overlay** — record a new global key combination for showing and hiding the overlay.

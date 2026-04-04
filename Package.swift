@@ -16,6 +16,7 @@ let package = Package(
             path: "Sources/ClipboardAppLib",
             linkerSettings: [
                 .linkedFramework("Carbon"),
+                .linkedFramework("Security"),
                 .linkedFramework("ServiceManagement"),
                 .linkedFramework("UserNotifications"),
             ]

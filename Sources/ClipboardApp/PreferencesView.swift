@@ -11,7 +11,7 @@ struct PreferencesView: View {
                 Stepper(value: $settings.maxHistoryItems, in: 10...200, step: 10) {
                     Text("Keep up to \(settings.maxHistoryItems) items")
                 }
-                Text("Older entries are removed when the limit is lowered. History is saved to Application Support as JSON.")
+                Text("Older entries are removed when the limit is lowered. History is saved under Application Support as encrypted JSON (AES-256-GCM; key in Keychain).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

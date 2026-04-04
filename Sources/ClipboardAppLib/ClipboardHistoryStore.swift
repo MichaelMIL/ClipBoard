@@ -226,28 +226,37 @@ public final class ClipboardHistoryStore: ObservableObject {
 
     private func loadFavoritesFromDisk() {
         let url = Self.favoritesPersistenceURL
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let raw = try? Data(contentsOf: url) else { return }
+        guard let data = try? ClipboardPersistenceCrypto.unwrapToPlaintextJSON(raw) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let decoded = try? decoder.decode([ClipboardItem].self, from: data) else { return }
         favorites = decoded
+        if !ClipboardPersistenceCrypto.isEncryptedFileFormat(raw) {
+            saveFavoritesToDisk()
+        }
     }
 
     private func saveFavoritesToDisk() {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(favorites) else { return }
+        guard let json = try? encoder.encode(favorites) else { return }
+        guard let data = try? ClipboardPersistenceCrypto.wrapPlaintextJSON(json) else { return }
         try? data.write(to: Self.favoritesPersistenceURL, options: [.atomic])
     }
 
     private func loadFromDisk() {
         let url = Self.persistenceURL
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let raw = try? Data(contentsOf: url) else { return }
+        guard let data = try? ClipboardPersistenceCrypto.unwrapToPlaintextJSON(raw) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let decoded = try? decoder.decode([ClipboardItem].self, from: data) else { return }
         items = Array(decoded.prefix(maxItems))
+        if !ClipboardPersistenceCrypto.isEncryptedFileFormat(raw) {
+            scheduleSave()
+        }
     }
 
     private func scheduleSave() {
@@ -263,7 +272,8 @@ public final class ClipboardHistoryStore: ObservableObject {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(items) else { return }
+        guard let json = try? encoder.encode(items) else { return }
+        guard let data = try? ClipboardPersistenceCrypto.wrapPlaintextJSON(json) else { return }
         try? data.write(to: Self.persistenceURL, options: [.atomic])
     }
 }
