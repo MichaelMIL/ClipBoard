@@ -95,7 +95,7 @@ Use a **prebuilt app** from [Releases](https://github.com/MichaelMIL/ClipBoard/r
 #### Option A — Download a release
 
 1. Open **[Releases](https://github.com/MichaelMIL/ClipBoard/releases)** and download the latest asset (for example a `.zip` containing `ClipboardApp.app`).
-2. Unzip if needed, then drag **`ClipboardApp.app`** into **Applications**.
+2. Unzip, then drag **`ClipboardApp.app`** into **Applications**.
 3. First launch: if Gatekeeper blocks the app, **right‑click** → **Open** → confirm (common for builds outside the Mac App Store).
 
 #### Option B — Build from source

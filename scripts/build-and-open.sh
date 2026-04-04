@@ -2,8 +2,9 @@
 # Bump Version.txt (optional), build, bundle, and open ClipboardApp.app.
 # Usage: ./scripts/build-and-open.sh --major | --minor | --alpha | --beta
 #        ./scripts/build-and-open.sh --skip-version
-#        Add --release to copy the built app to releases/ and write ClipboardApp-<ver>.app.md5
-#        (MD5 is of a PKZip produced by ditto -c -k --keepParent of the bundle).
+#        Add --release to write releases/<ver>/ClipboardApp-<ver>.zip: the zip contains ClipboardApp.app
+#        and ClipboardApp-<ver>.txt (MD5 of a PKZip of the app alone from ditto). Staging uses a temp dir;
+#        older releases under releases/<other-ver>/ are left unchanged.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -104,21 +105,34 @@ swift build
 
 if (( RELEASE )); then
   RELEASES_DIR="$ROOT/releases"
-  mkdir -p "$RELEASES_DIR"
   ver="$(head -n 1 "$VERSION_FILE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-  dest_name="ClipboardApp-${ver}.app"
-  dest="$RELEASES_DIR/$dest_name"
-  rm -rf "$dest"
-  cp -R "$APP" "$dest"
-  zip_tmp="$(mktemp "${TMPDIR:-/tmp}/clipboard-release.XXXXXX.zip")"
-  cleanup_zip() { rm -f "$zip_tmp"; }
-  trap cleanup_zip EXIT
-  ditto -c -k --keepParent --sequesterRsrc "$dest" "$zip_tmp"
-  md5 -q "$zip_tmp" > "$RELEASES_DIR/${dest_name}.md5"
+  version_dir="$RELEASES_DIR/$ver"
+  zip_name="ClipboardApp-${ver}.zip"
+  zip_path="$version_dir/$zip_name"
+  sidecar="ClipboardApp-${ver}_md5.txt"
+
+  rm -rf "$version_dir"
+  mkdir -p "$version_dir"
+
+  stage="$(mktemp -d "${TMPDIR:-/tmp}/clipboard-release.XXXXXX")"
+  trap 'rm -rf "$stage"' EXIT
+
+  cp -R "$APP" "$stage/ClipboardApp.app"
+
+  app_zip_tmp="$(mktemp "${TMPDIR:-/tmp}/clipboard-app-only.XXXXXX.zip")"
+  ditto -c -k --keepParent --sequesterRsrc "$stage/ClipboardApp.app" "$app_zip_tmp"
+  md5 -q "$app_zip_tmp" > "$stage/$sidecar"
+  rm -f "$app_zip_tmp"
+
+  rm -f "$zip_path"
+  ( cd "$stage" && COPYFILE_DISABLE=1 zip -r -y "$zip_path" "ClipboardApp.app" "$sidecar" )
+
+  zip_md5="$(md5 -q "$zip_path")"
+  rm -rf "$stage"
   trap - EXIT
-  cleanup_zip
-  echo "Release: $dest"
-  echo "MD5: $(cat "$RELEASES_DIR/${dest_name}.md5") ($RELEASES_DIR/${dest_name}.md5)"
+
+  echo "Release: $zip_path"
+  echo "MD5 (zip): $zip_md5"
 fi
 
 open "$APP"
