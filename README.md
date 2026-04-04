@@ -127,10 +127,31 @@ Use a **prebuilt app** from [Releases](https://github.com/MichaelMIL/ClipBoard/r
 
 ## Usage
 
-* Click the **Clipboard** icon in the menu bar → **Open overlay** (or use your shortcut).
-* Choose an entry; it is copied to the clipboard — paste with **⌘V** in any app.
-* **Preferences…** (also **⌘,** from the menu) — history size, notifications, login item, overlay shortcut.
+### Menu bar
+
+* Click the **Clipboard** icon in the menu bar → **Open overlay**, or use the **global shortcut** shown next to that item (default **⌘⇧C**, configurable in Preferences).
+* **Preferences…** — **⌘,** from the menu (or **Clipboard** → **Preferences…**).
 * **About…** — version and app info.
+* **Quit Clipboard** — exit the app.
+
+### Overlay
+
+The overlay has two tabs: **History** (everything Clipboard has recorded, subject to the history size limit) and **Favorites** (items you starred). **Favorites are never deleted when history rolls off or when you lower the history limit**—they live in a separate saved list; you remove one only by unstarring it. Choosing an entry copies it to the system pasteboard; paste with **⌘V** in the app where you are working. The overlay closes after you pick an item (or when you click outside it or switch apps).
+
+* **Search** — Use the search field to filter the current tab. Matches are case-insensitive against **text** clip contents and **file** paths (including file names).
+* **Arrow keys (↑ / ↓)** — Move the highlight through the filtered list; the view scrolls to keep the selection visible.
+* **Return (↵)** — Copy the highlighted item and dismiss the overlay.
+* **Number keys 1–9, then 0** — Copy the item shown with that badge in the **left column**. Numbers apply to the **first ten rows currently visible** in the scroll view (top to bottom), not to fixed positions in the full history—scroll to bring other items into view to reassign 1–0.
+* **Click a row** — Same as choosing that item (copy + dismiss).
+* **Star** — Toggle **Favorites** for that row without copying; favorites also appear under the **Favorites** tab.
+* **Escape** — With focus in the search field, **Escape** moves focus to the list (so you can navigate with arrows). With focus on the list, **Escape** triggers **Cancel** and closes the overlay.
+
+### Preferences
+
+* **History** — **Keep up to *N* items** (10–200, step 10). Lowering the limit drops older **history** entries only; **favorites are unchanged**. History is stored on disk under Application Support as JSON.
+* **Notifications** — **Show notification when you copy**; optional **Hide copied content in notifications** (generic text only; the overlay list still shows full previews). **Open Notifications settings…** jumps to System Settings. **Fix registration (Launch Services)…** helps if the app does not appear in the notifications list (available when running the bundled **ClipboardApp.app**, not only `swift run`).
+* **Login** — **Open at login** registers the app with the system login item API (**SMAppService**). Unsigned local builds may need you to allow Clipboard under **Login Items** in System Settings; errors surface in red under this section when registration fails.
+* **Shortcuts** — **Open overlay** — record a new global key combination for showing and hiding the overlay.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
