@@ -28,6 +28,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             self?.registerOverlayHotKey()
         }
         historyStore.start()
+
+        Task(priority: .utility) {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await UpdateAvailableNotifier.checkAndNotifyIfNeeded()
+        }
     }
 
     private func registerOverlayHotKey() {
@@ -49,5 +54,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .list])
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+        let info = response.notification.request.content.userInfo
+        guard let urlString = info[UpdateAvailableNotifier.releasePageURLUserInfoKey] as? String,
+              let url = URL(string: urlString)
+        else { return }
+        NSWorkspace.shared.open(url)
     }
 }

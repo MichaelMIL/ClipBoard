@@ -8,6 +8,8 @@ private enum AboutContact {
 }
 
 struct AboutView: View {
+    @State private var updateOutcome: GitHubUpdateCheck.Outcome = .idle
+
     var body: some View {
         Form {
             Section {
@@ -24,6 +26,51 @@ struct AboutView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
+            }
+
+            Section("Updates") {
+                Button("Check for updates…") {
+                    Task {
+                        updateOutcome = .checking
+                        let v = AppVersion.string
+                        let current = (v == "—") ? "0" : v
+                        updateOutcome = await GitHubUpdateCheck.check(currentVersion: current)
+                    }
+                }
+                .disabled(updateOutcome == .checking)
+
+                Group {
+                    switch updateOutcome {
+                    case .idle:
+                        EmptyView()
+                    case .checking:
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Checking GitHub…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    case let .upToDate(latest):
+                        Text("You’re on the latest release. Latest on GitHub: \(latest).")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    case let .updateAvailable(latest, pageURL):
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("A newer release is available: \(latest).")
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Link("Open release page", destination: pageURL)
+                        }
+                    case let .failed(message):
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Section("Author") {
