@@ -175,6 +175,12 @@ struct OverlayContentView: View {
                 overlayFocus = .list
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .overlayPanelDidShow)) { _ in
+            selection = filteredActiveItems.first?.id
+            DispatchQueue.main.async {
+                overlayFocus = .list
+            }
+        }
         .onExitCommand {
             onDismiss()
         }

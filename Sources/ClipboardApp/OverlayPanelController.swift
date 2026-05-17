@@ -2,6 +2,12 @@ import AppKit
 import ClipboardAppLib
 import SwiftUI
 
+extension Notification.Name {
+    /// Posted after the overlay panel is ordered front; lets the SwiftUI view reset per-appearance state
+    /// (selection, focus) since the hosting controller is reused across show/hide.
+    static let overlayPanelDidShow = Notification.Name("ClipboardApp.overlayPanelDidShow")
+}
+
 /// Hosts the overlay in an `NSPanel` and restores the previously frontmost app when closed.
 final class OverlayPanelController: NSObject, NSWindowDelegate {
     static let shared = OverlayPanelController()
@@ -80,6 +86,7 @@ final class OverlayPanelController: NSObject, NSWindowDelegate {
         previousApp = NSWorkspace.shared.frontmostApplication
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: .overlayPanelDidShow, object: self)
     }
 
     func hide() {
