@@ -42,5 +42,15 @@ let package = Package(
                 ),
             ]
         ),
+        .testTarget(
+            name: "ClipboardAppLibTests",
+            dependencies: ["ClipboardAppLib"],
+            path: "Tests/ClipboardAppLibTests"
+        ),
+        .testTarget(
+            name: "ClipboardAppTests",
+            dependencies: ["ClipboardApp"],
+            path: "Tests/ClipboardAppTests"
+        ),
     ]
 )

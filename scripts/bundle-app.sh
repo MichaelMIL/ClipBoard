@@ -76,7 +76,25 @@ if [[ -n "$MARKETING_VER" ]]; then
 fi
 
 xattr -cr "$APP"
-codesign --force --deep --sign - "$APP"
+
+ENTITLEMENTS="$ROOT/Supporting/ClipboardApp.entitlements"
+
+# Sign nested bundles first (codesign --deep is deprecated; sign each component explicitly).
+if [[ -d "$APP_RES_BUNDLE" ]]; then
+    codesign --force --sign - "$APP_RES_BUNDLE"
+fi
+
+# Sign the app with Hardened Runtime enabled. Locally we use the ad-hoc identity "-"; for tagged
+# releases swap "-" for a Developer ID Application certificate and add --timestamp, then notarize:
+#   codesign --force --options runtime --entitlements "$ENTITLEMENTS" --timestamp \
+#            --sign "Developer ID Application: Your Name (TEAMID)" "$APP"
+#   xcrun notarytool submit "$RELEASE_ZIP" --keychain-profile <profile> --wait
+#   xcrun stapler staple "$APP"
+codesign --force \
+    --options runtime \
+    --entitlements "$ENTITLEMENTS" \
+    --sign - \
+    "$APP"
 
 echo "Built: $APP"
 echo "Open it from Finder or run: open \"$APP\""

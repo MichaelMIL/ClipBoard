@@ -65,8 +65,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         let info = response.notification.request.content.userInfo
         guard let urlString = info[UpdateAvailableNotifier.releasePageURLUserInfoKey] as? String,
-              let url = URL(string: urlString)
+              let url = URL(string: urlString),
+              Self.isTrustedReleasePageURL(url)
         else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    /// Restricts which URLs the update-check notification is allowed to open.
+    /// The release page URL comes from `api.github.com`'s response and is delivered to us through
+    /// `UNNotificationContent.userInfo`; if either source were ever compromised, this guard prevents the
+    /// notification from launching an arbitrary site in the user's browser.
+    private static func isTrustedReleasePageURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https",
+              let host = url.host?.lowercased()
+        else { return false }
+        return host == "github.com" || host.hasSuffix(".github.com")
     }
 }

@@ -1,5 +1,8 @@
 import AppKit
 import Carbon
+import os
+
+private let hotKeyLog = Logger(subsystem: "ClipboardApp", category: "HotKey")
 
 /// Global shortcut via Carbon `RegisterEventHotKey` (key code + Carbon modifier mask).
 /// Typically does **not** require Accessibility or Input Monitoring (unlike CGEvent taps).
@@ -25,7 +28,9 @@ final class GlobalHotKey {
 
         let regStatus = RegisterEventHotKey(keyCode, carbonModifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
         if regStatus != noErr {
-            NSLog("ClipboardApp: RegisterEventHotKey failed: \(regStatus) keyCode=\(keyCode) modifiers=\(carbonModifiers)")
+            hotKeyLog.error(
+                "RegisterEventHotKey failed: status=\(regStatus, privacy: .public) keyCode=\(keyCode, privacy: .private) modifiers=\(carbonModifiers, privacy: .private)"
+            )
         }
     }
 
@@ -72,7 +77,7 @@ final class GlobalHotKey {
             &eventHandler
         )
         if installStatus != noErr {
-            NSLog("ClipboardApp: InstallEventHandler failed: \(installStatus)")
+            hotKeyLog.error("InstallEventHandler failed: status=\(installStatus, privacy: .public)")
         }
     }
 

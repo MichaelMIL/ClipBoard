@@ -57,7 +57,12 @@ enum GitHubUpdateCheck {
         }
 
         let latest = decoded.tagName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let pageURL = URL(string: decoded.htmlURL) else {
+        guard Self.isValidVersionTag(latest) else {
+            return .failed(message: "Unexpected release tag format.")
+        }
+        guard let pageURL = URL(string: decoded.htmlURL),
+              Self.isTrustedReleasePageURL(pageURL)
+        else {
             return .failed(message: "Invalid release page URL.")
         }
 
@@ -69,8 +74,25 @@ enum GitHubUpdateCheck {
         }
     }
 
+    /// Accepts `v?N(.N){1,3}(-(alpha|beta).N)?` so a tampered API can't slip a free-form string through the
+    /// comparison logic (which previously coerced unknown segments to 0).
+    static func isValidVersionTag(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pattern = #"^v?\d{1,4}(\.\d{1,4}){1,3}(-(alpha|beta|rc)\.\d{1,4})?$"#
+        return trimmed.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    /// Defense in depth — the release page URL we hand off to `NSWorkspace.open` must point at GitHub.
+    private static func isTrustedReleasePageURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https",
+              let host = url.host?.lowercased()
+        else { return false }
+        return host == "github.com" || host.hasSuffix(".github.com")
+    }
+
     /// Strips a leading `v` and compares dotted numeric segments (e.g. `1.10.0` vs `1.9.0`).
-    private static func compareVersions(_ a: String, _ b: String) -> ComparisonResult {
+    /// `internal` (not `private`) so the unit-test target can drive it directly.
+    static func compareVersions(_ a: String, _ b: String) -> ComparisonResult {
         let na = normalizedNumericParts(a)
         let nb = normalizedNumericParts(b)
         let count = max(na.count, nb.count)

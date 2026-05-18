@@ -172,6 +172,9 @@ enum ForegroundSelectionFavoriteCapture {
                 if NSPasteboard.general.changeCount != beforeCount {
                     if let content = ClipboardHistoryStore.contentFromGeneralPasteboard() {
                         _ = store.addFavoriteFromCapturedContent(content)
+                        // The synthetic ⌘C just dirtied the pasteboard. Tell the store this is the current
+                        // state so its next poll tick doesn't re-record it into history a moment later.
+                        store.markPasteboardSynchronized(with: content)
                         favoriteShortcutLog.notice("Added favorite from pasteboard after ⌘C")
                         return
                     }

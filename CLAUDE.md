@@ -28,9 +28,16 @@ Keep cross-cutting model/persistence/settings logic in `ClipboardAppLib`; keep U
 
 ### Persistence + encryption envelope
 
-History and favorites live under `~/Library/Application Support/ClipboardApp/{history.json,favorites.json}`. `ClipboardPersistenceCrypto` writes a `CLP1` magic prefix followed by `AES.GCM.SealedBox.combined` when encryption is on; without the prefix the file is plain JSON. Reads auto-detect via `isEncryptedFileFormat`. The 256-bit key is stored in the **login Keychain** as a generic password (`service = ClipboardApp.persistence`, `account = clipboard-store-v1`, `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`).
+History and favorites live under `~/Library/Application Support/ClipboardApp/{history.json,favorites.json}`. The support directory is created `0o700` and persistence files are written `0o600`. `ClipboardPersistenceCrypto` recognizes three on-disk envelopes:
+- **`CLP2`** (current): `magic | AES.GCM.SealedBox.combined`, AAD bound to file role (`Data("CLP2|history|v1")` or `…|favorites|v1`). Swap/downgrade resistant.
+- **`CLP1`** (legacy, read-only): old envelope with no AAD. Loaded for migration; on read the store flags a format mismatch via `formatMismatch(_:)` and rewrites the file as CLP2 on the next save.
+- **Plain JSON**: no magic prefix; used when `encryptClipboardDataAtRest` is off.
 
-When the user toggles encryption, `persistenceFormatMismatch` causes the store to rewrite both files immediately so the envelope matches the setting (see the `encryptClipboardDataAtRest` Combine sink in `ClipboardHistoryStore.init`). Encrypted backups are not portable without the Keychain entry.
+The 256-bit key is stored in the **login Keychain** as a generic password (`service = ClipboardApp.persistence`, `account = clipboard-store-v1`, `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, `kSecAttrSynchronizable = false`). Keychain semantics in `loadOrCreateSymmetricKey` distinguish `errSecItemNotFound` (generate a new key) from other failures (throw); a present-but-wrong-size entry throws `keychainCorrupted` rather than silently overwriting — destroying the key destroys all encrypted history.
+
+Load errors are surfaced rather than swallowed: when `ClipboardHistoryStore.loadCollection` hits a decrypt or JSON-decode failure (vs. a transient Keychain failure), the file is renamed to `<name>.unreadable-<iso8601>` before the next save runs — so a one-off corruption does not result in silent overwrite. Transient Keychain failures leave the file intact.
+
+**Keychain scoping caveat.** Because local builds use ad-hoc codesigning, the Keychain item is scoped only by `service`/`account`, not by Team ID — another ad-hoc binary claiming the same `service` could read it. The mitigation is Developer ID signing for release builds (see [Versioning + signing](#versioning--signing)). The encrypted backup files are not portable without the Keychain entry from the originating Mac.
 
 ### Overlay panel
 
@@ -41,6 +48,12 @@ When the user toggles encryption, `persistenceFormatMismatch` causes the store t
 `GlobalHotKey` uses Carbon `RegisterEventHotKey` (not `CGEvent` taps) so the app **does not require Accessibility or Input Monitoring** for the overlay shortcut. `AppSettings` stores key code + Carbon modifier mask + a single lowercase character used only for the SwiftUI menu hint (`HotKeyBridge.overlayMenuKeyboardShortcut`). When the user records a new shortcut, `AppDelegate` re-registers via a `debounce(120ms)` Combine sink.
 
 The separate "favorite selection" path in `ForegroundFavoriteShortcut.swift` *does* need Accessibility (preferred: `AXUIElementCopyAttributeValue` for `kAXSelectedTextAttribute`) and falls back to a synthetic `⌘C` posted to `.cgSessionEventTap`, which may need Input Monitoring.
+
+### Versioning + signing
+
+`scripts/bundle-app.sh` signs the inner resource bundle first, then the app with Hardened Runtime (`--options runtime`) and `Supporting/ClipboardApp.entitlements`. Locally this uses the ad-hoc identity (`-`), so the resulting bundle has `flags=0x10002(adhoc,runtime)` and `TeamIdentifier=not set`. For tagged releases, swap `-` for a Developer ID Application certificate and add `--timestamp` + `xcrun notarytool` + `xcrun stapler staple` (see the comment block in the script).
+
+`--deep` is no longer used; nested bundles are signed explicitly so Apple's deprecation warning does not regress over time.
 
 ### Versioning
 
@@ -54,6 +67,6 @@ The separate "favorite selection" path in `ForegroundFavoriteShortcut.swift` *do
 
 - `Info.plist` for the executable is `Sources/ClipboardApp/ExecutableInfo.plist`, embedded into the binary as a `__TEXT,__info_plist` section via `unsafeFlags` in `Package.swift`. `bundle-app.sh` *also* copies it to `Contents/Info.plist`. When you change app metadata (bundle id, `LSUIElement`, min OS), edit `ExecutableInfo.plist` — both code paths read it.
 - `LSUIElement = true` makes this a menu bar–only app. The `UNUserNotificationCenterDelegate.willPresent` override in `AppDelegate` is necessary or copy banners never appear because the OS treats menu-bar apps as foreground.
-- SwiftPM resource bundles are flat by default; `bundle-app.sh` reshapes `ClipboardApp_ClipboardApp.bundle` into `Contents/{Info.plist,Resources/…}` so `codesign --deep` accepts it.
+- SwiftPM resource bundles are flat by default; `bundle-app.sh` reshapes `ClipboardApp_ClipboardApp.bundle` into `Contents/{Info.plist,Resources/…}` so per-component `codesign` accepts it.
 - Persisted `ClipboardItem` uses a custom `Codable` with `text` / `filePaths` keys (not the enum's automatic encoding) — preserve this if you change the model, or write a migration.
 - History size is clamped to **10…200** via `AppSettings.clampHistoryCount`; favorites are stored separately and are **not** trimmed when history shrinks.
